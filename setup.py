@@ -12,9 +12,9 @@ from os import path
 here = path.abspath(path.dirname(__file__))
 
 setup(
-    name='core.utils',
+    name='core.logger',
     version='1.0.1',
-    description='Core utils module',
+    description='Core logger module',
 
     author='dogtag',
     author_email='dogtag@protonmail.com',
@@ -35,7 +35,7 @@ setup(
     #   py_modules=["my_module"],
     #
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
-    namespace_packages=['core', 'core.utils'],
+    namespace_packages=['core', 'core.logger'],
 
     install_requires=[],
 
