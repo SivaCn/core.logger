@@ -51,11 +51,18 @@ def get_central_logger():
 central_logger = get_central_logger()
 
 
-def central_logger_api(payload):
+def central_logger_api(data, error=None):
 
-    payload_dict = json.loads(payload)
+    if error:
+        central_logger.error('Error when received {}, {}'.format(data, error))
 
-    _logger_obj = getattr(central_logger, payload_dict.get('loglevel', ''), '') or getattr(central_logger, 'info')
+    elif not isinstance(data, dict):
+        central_logger.info(data)
 
-    _logger_obj(payload)
+    else:
+        _logger_obj = getattr(central_logger, data.get('loglevel', ''), '')
+
+        _logger_obj = _logger_obj if _logger_obj else getattr(central_logger, 'info')
+
+        _logger_obj(data)
 
