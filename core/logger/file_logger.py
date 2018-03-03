@@ -22,7 +22,9 @@ from logging.handlers import RotatingFileHandler
 # ----------- END: Third Party Imports ---------- #
 
 # ----------- START: In-App Imports ---------- #
-from core.utils.environ import get_log_dir_path
+from core.utils.environ import (
+    get_log_dir_path, get_log_file_details
+)
 
 from core.constants import LOG_FORMAT, central_logger_settings
 # ----------- END: In-App Imports ---------- #
@@ -32,15 +34,21 @@ __all__ = [
 ]
 
 
-def get_central_logger():
-    central_logger = logging.getLogger("central_log")
+LOG_FILES = get_log_file_details()
+
+
+def get_central_logger(category='default'):
+
+    central_logger = logging.getLogger(category)
+
     central_logger.setLevel(central_logger_settings['LOG_LEVEL'])
 
     handler = RotatingFileHandler(
-        os.path.join(get_log_dir_path(), central_logger_settings['LOG_FILE_NAME']),
+        os.path.join(get_log_dir_path(), LOG_FILES[category]),
         maxBytes=central_logger_settings['LOG_FILE_MAX_BYTES'],
         backupCount=central_logger_settings['LOG_FILE_BACKUP_COUNT']
     )
+
     handler.setFormatter(logging.Formatter(LOG_FORMAT))
 
     central_logger.addHandler(handler)
@@ -48,21 +56,36 @@ def get_central_logger():
     return central_logger
 
 
-central_logger = get_central_logger()
+#
+# XXX: This must be present here. Do not Remove.
+LOGGERS = {
+    'default': get_central_logger('default'),
+
+    'process': get_central_logger('process'),
+    'scheduler_svc': get_central_logger('scheduler_svc'),
+    'scheduler_access': get_central_logger('scheduler_access'),
+
+    'program_errors': get_central_logger('program_errors'),
+}
 
 
 def central_logger_api(data, error=None):
 
     if error:
-        central_logger.error('Error when received {}, {}'.format(data, error))
+        LOGGERS['program_errors'].error('Error when received {}, {}'.format(data, error))
 
     elif not isinstance(data, dict):
-        central_logger.info(data)
+        LOGGERS['default'].info(data)
 
     else:
-        _logger_obj = getattr(central_logger, data.get('loglevel', ''), '')
 
-        _logger_obj = _logger_obj if _logger_obj else getattr(central_logger, 'info')
+        log_category = data.pop('category', 'default')
+
+        logger = LOGGERS.get(log_category)
+
+        log_level = data.pop('log_level', 'info')
+
+        _logger_obj = getattr(logger, log_level, None) or logger.info
 
         _logger_obj(data)
 
